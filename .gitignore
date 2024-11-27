@@ -18,3 +18,7 @@ pytest_cache/
 *.log
 *.bak
 *.swp
+
+# Ignore data folder
+data/raw/
+data/samples/
