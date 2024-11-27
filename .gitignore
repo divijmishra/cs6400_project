@@ -22,3 +22,6 @@ pytest_cache/
 # Ignore data folder
 data/raw/
 data/samples/
+
+# Ignore Python editable installation files
+db_project.egg-info/
