@@ -61,10 +61,15 @@ def save_subset_of_ratings(input_file, output_dir, num_businesses=100000):
 
     # Modify file name
     num_ratings = len(filtered_df)
-    output_file = f"{output_dir}/ratings_{num_businesses}_{num_ratings}.csv" 
+    num_users = len(filtered_df['user'].drop_duplicates())
+    output_file = f"{output_dir}/ratings_{num_businesses}.csv" 
 
     filtered_df.to_csv(output_file, index=False)
     print(f"Filtered data saved to '{output_file}'.")
+
+    # Save statistics
+    with open(f"{output_dir}/stats_{num_businesses}.txt", "w") as file:
+        file.write(f"Sample contains {num_businesses} businesses, {num_ratings} ratings, {num_users} users.")
 
     return output_file
 
@@ -127,7 +132,7 @@ def save_filtered_subset_of_metadata(csv_file, json_file, output_dir):
     # Modify file name
     num_ratings = len(ratings_df)
     num_businesses = len(unique_businesses) 
-    output_file = f"{output_dir}/metadata_{num_businesses}_{num_ratings}.csv"
+    output_file = f"{output_dir}/metadata_{num_businesses}.csv"
 
     if filtered_businesses_unique:
         df = pd.json_normalize(filtered_businesses_unique)  
@@ -181,12 +186,24 @@ def fetch_raw_google_reviews_data():
     metadata_path = os.path.join(data_dir, "metadata_full.json")
 
     # Download the files
-    download_file(ratings_url, ratings_gz_path)
-    download_file(metadata_url, metadata_gz_path)
+    if os.path.exists(ratings_gz_path):
+        print(f"{ratings_gz_path} already exists, skipping download.")
+    else:
+        download_file(ratings_url, ratings_gz_path)
+    if os.path.exists(metadata_gz_path):
+        print(f"{metadata_gz_path} already exists, skipping download.")
+    else: 
+        download_file(metadata_url, metadata_gz_path)
 
     # Extract files
-    extract_gz(ratings_gz_path, ratings_path)
-    extract_gz(metadata_gz_path, metadata_path)
+    if os.path.exists(ratings_path):
+        print(f"{ratings_path} already exists, skipping extraction.")
+    else:
+        extract_gz(ratings_gz_path, ratings_path)
+    if os.path.exists(metadata_path):
+        print(f"{metadata_path} already exists, skipping extraction.")
+    else:
+        extract_gz(metadata_gz_path, metadata_path)
 
 # Function to create and save subsets of data for experimentation
 def save_all_subsets():
