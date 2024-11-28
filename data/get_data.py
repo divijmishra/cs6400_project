@@ -21,126 +21,78 @@ import shutil
 import requests
 import pandas as pd
 
-# Randomly choose a subset of businesses from ratings and save their ratings
-def save_subset_of_ratings(input_file, output_dir, num_businesses=100000):
+# Choose a subset of N businesses, N users, and the corresponding reviews
+# such that we choose businesses and users with lots of reviews
+def save_core_subset_of_ratings(ratings_file, metadata_file, output_dir, num_businesses=100):
     """
-    Loads data from csv input_file, randomly selects a subset of 
-    num_businesses businesses, and saves their ratings to output_file
+    Loads raw ratings data and business metadata.
+    Selects the top (num_businesses) businesses according to how many reviews
+    they have.
+    Filters ratings for ratings of the selected businesses.
+    Among the users left, selects the top (num_businesses) users according to 
+    how many businesses they've reviewed in this subset.
+    Filters ratings for these users again, resulting in a dataset with
+    (num_businesses) businesses, (num_businesses) users, and lots of reviews. 
 
     Arguments
-        input_file  : path to input data (raw ratings csv)
-        output_dir : directory to save ratings of the chosen subset of     
-                        businesses
-
-    Returns: 
-        output_file: (str) path to saved subset
-    """
-
-    try:
-        df = pd.read_csv(input_file)
-        print(f"Loaded data from {input_file} with {len(df)} rows.")
-    except FileNotFoundError:
-        print(f"Error: The file {input_file} was not found.")
-        return
-
-    if 'business' not in df.columns:
-        print("Error: 'business' column is not present in the CSV file.")
-        return
-
-    # Randomly select the specified number of unique businesses
-    unique_businesses = df['business'].drop_duplicates()
-    if len(unique_businesses) < num_businesses:
-        print(f"Warning: The dataset contains only {len(unique_businesses)} unique businesses.")
-        num_businesses = len(unique_businesses)
-    
-    sampled_businesses = unique_businesses.sample(n=num_businesses, random_state=42)
-
-    # Filter the dataframe to include only entries related to the sampled businesses
-    filtered_df = df[df['business'].isin(sampled_businesses)]
-    print(f"Filtered data to {len(filtered_df)} rows related to {num_businesses} unique businesses.")
-
-    # Modify file name
-    num_ratings = len(filtered_df)
-    num_users = len(filtered_df['user'].drop_duplicates())
-    output_file = f"{output_dir}/ratings_{num_businesses}.csv" 
-
-    filtered_df.to_csv(output_file, index=False)
-    print(f"Filtered data saved to '{output_file}'.")
-
-    # Save statistics
-    with open(f"{output_dir}/stats_{num_businesses}.txt", "w") as file:
-        file.write(f"Sample contains {num_businesses} businesses, {num_ratings} ratings, {num_users} users.")
-
-    return output_file
-
-# Filter metadata for businesses present in a rating subset and save it
-def save_filtered_subset_of_metadata(csv_file, json_file, output_dir):
-    """
-    Given a subset of ratings via csv_file, goes through the json_file 
-    business metadata and saves the metadata of businesses rated in csv_file 
-    to output_file 
-
-    Arguments
-        csv_file    : path to ratings for a subset of the metadata
-        json_file   : path to full business metadata
-        output_file : directory to save filtered business metadata
+        ratings_file : path to raw ratings.csv 
+        metadata_file: path to raw metadata.csv
+        output_dir   : directory to save ratings of the chosen subset of businesses
 
     Returns: 
         None
     """
+
+    try:
+        ratings_df = pd.read_csv(ratings_file)
+        # print(f"Loaded data from {ratings_file} with {len(ratings_df)} rows.")
+    except FileNotFoundError:
+        print(f"Error: The file {ratings_file} was not found.")
+        return
     
     try:
-        ratings_df = pd.read_csv(csv_file)
-        unique_businesses = ratings_df['business'].unique()  # Get unique business names
-        print(f"Loaded {len(unique_businesses)} unique businesses from '{csv_file}'.")
+        metadata_df = pd.read_json(metadata_file, lines=True)
+        # print(f"Loaded data from {metadata_file} with {len(metadata_df)} rows.")
     except FileNotFoundError:
-        print(f"Error: The file '{csv_file}' was not found.")
+        print(f"Error: The file {metadata_file} was not found.")
         return
 
-    try:
-        with open(json_file, 'r') as file:
-            business_data = [json.loads(line) for line in file]
-            print(f"Loaded {len(business_data)} entries from '{json_file}'.")
-    except FileNotFoundError:
-        print(f"Error: The file '{json_file}' was not found.")
-        return
-    except json.JSONDecodeError as e:
-        print(f"Error: The file '{json_file}' contains invalid JSON.")
-        print(f"{e}")
+    if 'business' not in ratings_df.columns:
+        print("Error: 'business' column is not present in the CSV file.")
         return
 
-    # Filter JSON data for businesses that match names in the filtered ratings CSV
-    filtered_businesses = []
+    # Select the top {num_businesses} businesses acc to number of reviews
+    top_businesses = metadata_df.nlargest(num_businesses, 'num_of_reviews')
 
-    # Extract information based on business names
-    for business in business_data:
-        if business.get('gmap_id') in unique_businesses:
-            filtered_businesses.append(business)
+    # Filter ratings once
+    filtered_ratings = ratings_df[ratings_df['business'].isin(top_businesses['gmap_id'])]
 
-    # Check for duplicates based on 'gmap_id'
-    gmap_ids = [business.get('gmap_id') for business in filtered_businesses]
-    duplicate_gmap_ids = [gmap_id for gmap_id in set(gmap_ids) if gmap_ids.count(gmap_id) > 1]
+    # Select the top {num_businesses} users in the filtered  set acc to number of reviews
+    user_activity = (
+        filtered_ratings.groupby('user')
+            .size()
+            .reset_index(name='num_ratings')
+            .sort_values(by='num_ratings', ascending=False)
+    )
+    top_users = user_activity.head(num_businesses)['user']
 
-    unique_businesses_dict = {}
-    for business in filtered_businesses:
-        gmap_id = business.get('gmap_id')
-        if gmap_id not in unique_businesses_dict:
-            unique_businesses_dict[gmap_id] = business
+    # Filter ratings again
+    final_ratings = filtered_ratings[filtered_ratings['user'].isin(top_users)]
 
-    filtered_businesses_unique = list(unique_businesses_dict.values())
+    # Write statistics to a txt file
+    with open(f"{output_dir}/stats_{num_businesses}.txt", "w") as file:
+        file.write(f"Sample contains {num_businesses} businesses, {len(final_ratings)} ratings, {num_businesses} users.")
 
-    # Modify file name
-    num_ratings = len(ratings_df)
-    num_businesses = len(unique_businesses) 
-    output_file = f"{output_dir}/metadata_{num_businesses}.csv"
+    # Save metadata subset
+    metadata_output_file = f"{output_dir}/metadata_{num_businesses}.csv"
+    metadata_output_df = pd.json_normalize(top_businesses)
+    metadata_output_df.to_csv(metadata_output_file, index=False, encoding='utf-8')
+    print(f"Filtered business information saved to '{metadata_output_file}'.")
 
-    if filtered_businesses_unique:
-        df = pd.json_normalize(filtered_businesses_unique)  
-
-        df.to_csv(output_file, index=False, encoding='utf-8')  
-        print(f"Filtered business information saved to '{output_file}'.")
-    else:
-        print("No matching businesses found in the JSON data.")
+    # Save ratings subset
+    ratings_output_file = f"{output_dir}/ratings_{num_businesses}.csv" 
+    final_ratings.to_csv(ratings_output_file, index=False)
+    print(f"Filtered data saved to '{ratings_output_file}'.")
 
 # Creates a directory if it doesn't already exist
 def create_directory(directory):
@@ -207,7 +159,7 @@ def fetch_raw_google_reviews_data():
 
 # Function to create and save subsets of data for experimentation
 def save_all_subsets():
-    subset_list = [100, 1000, 10000, 100000]
+    subset_list = [100, 300, 1000, 3000, 10000]
 
     # Directory to save subsets
     raw_data_dir = "data/raw"
@@ -221,8 +173,7 @@ def save_all_subsets():
     # Save subsets
     for num_businesses in subset_list:
         print(f"Creating subset with {num_businesses} businesses")
-        ratings_subset_file = save_subset_of_ratings(raw_ratings_path, data_dir, num_businesses)
-        save_filtered_subset_of_metadata(ratings_subset_file, raw_metadata_path, data_dir)
+        save_core_subset_of_ratings(raw_ratings_path, raw_metadata_path, data_dir, num_businesses)
 
 if __name__ == "__main__":
     fetch_raw_google_reviews_data()
