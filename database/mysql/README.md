@@ -18,17 +18,15 @@ Login to MySQL as admin. Run the following commands:
 ```
 CREATE USER 'cs6400'@'localhost' IDENTIFIED BY 'qwertyuiop';
 ```
+Create databases and assign permissions for whichever num_businesses subset you want.
 ```
 CREATE DATABASE IF NOT EXISTS cs6400_100;
-CREATE DATABASE IF NOT EXISTS cs6400_1000;
-CREATE DATABASE IF NOT EXISTS cs6400_10000;
-CREATE DATABASE IF NOT EXISTS cs6400_100000;
-```
-```
 GRANT ALL PRIVILEGES ON cs6400_100.* TO 'cs6400'@'localhost';
+CREATE DATABASE IF NOT EXISTS cs6400_1000;
 GRANT ALL PRIVILEGES ON cs6400_1000.* TO 'cs6400'@'localhost';
-GRANT ALL PRIVILEGES ON cs6400_10000.* TO 'cs6400'@'localhost';
-GRANT ALL PRIVILEGES ON cs6400_100000.* TO 'cs6400'@'localhost';
+.
+.
+.
 ```
 This will create a separate database for each num_businesses value that we're experimenting with.
 <!-- ```
