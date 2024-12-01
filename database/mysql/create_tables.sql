@@ -4,6 +4,8 @@ DROP TABLE IF EXISTS businesses;
 DROP TABLE IF EXISTS users;
 DROP TABLE IF EXISTS ratings;
 DROP TABLE IF EXISTS business_categories;
+DROP TABLE IF EXISTS user_similarity;
+DROP TABLE IF EXISTS business_similarity;
 SET FOREIGN_KEY_CHECKS = 1;
 
 -- Table to store business data
@@ -41,7 +43,7 @@ CREATE TABLE business_categories (
 );
 
 -- Table to store user similarities
-CREATE TABLE IF NOT EXISTS user_similarity (
+CREATE TABLE user_similarity (
     user_id_1 VARCHAR(50) NOT NULL, -- User 1 ID, must not be NULL
     user_id_2 VARCHAR(50) NOT NULL, -- User 2 ID, must not be NULL
     similarity_score DECIMAL(5, 4) NOT NULL, -- Cosine similarity score
@@ -53,7 +55,7 @@ CREATE TABLE IF NOT EXISTS user_similarity (
 );
 
 -- Table to store business similarities
-CREATE TABLE IF NOT EXISTS business_similarity (
+CREATE TABLE business_similarity (
     business_id_1 VARCHAR(50) NOT NULL, -- First business ID, must not be NULL
     business_id_2 VARCHAR(50) NOT NULL, -- Second business ID, must not be NULL
     similarity_score DECIMAL(5, 4) NOT NULL DEFAULT 0.0000, -- Similarity score with default value
