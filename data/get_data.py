@@ -15,6 +15,7 @@ Data downloaded to data/raw/, subsets saved to data/samples/.
 """
 
 import os
+import time
 import json
 import gzip
 import shutil
@@ -63,9 +64,15 @@ def save_core_subset_of_ratings(ratings_file, metadata_file, output_dir, num_bus
 
     # Select the top {num_businesses} businesses acc to number of reviews
     top_businesses = metadata_df.nlargest(num_businesses, 'num_of_reviews')
+    if top_businesses.empty:
+        print("Error: No businesses selected. Check metadata file content.")
+        return
 
     # Filter ratings once
     filtered_ratings = ratings_df[ratings_df['business'].isin(top_businesses['gmap_id'])]
+    if filtered_ratings.empty:
+        print("Error: No ratings match the selected businesses.")
+        return
 
     # Select the top {num_businesses} users in the filtered  set acc to number of reviews
     user_activity = (
@@ -78,6 +85,9 @@ def save_core_subset_of_ratings(ratings_file, metadata_file, output_dir, num_bus
 
     # Filter ratings again
     final_ratings = filtered_ratings[filtered_ratings['user'].isin(top_users)]
+    if final_ratings.empty:
+        print("Error: No ratings match the selected users.")
+        return
 
     # Write statistics to a txt file
     with open(f"{output_dir}/stats_{num_businesses}.txt", "w") as file:
@@ -85,8 +95,7 @@ def save_core_subset_of_ratings(ratings_file, metadata_file, output_dir, num_bus
 
     # Save metadata subset
     metadata_output_file = f"{output_dir}/metadata_{num_businesses}.csv"
-    metadata_output_df = pd.json_normalize(top_businesses)
-    metadata_output_df.to_csv(metadata_output_file, index=False, encoding='utf-8')
+    top_businesses.to_csv(metadata_output_file, index=False, encoding='utf-8')
     print(f"Filtered business information saved to '{metadata_output_file}'.")
 
     # Save ratings subset
@@ -159,7 +168,7 @@ def fetch_raw_google_reviews_data():
 
 # Function to create and save subsets of data for experimentation
 def save_all_subsets():
-    subset_list = [100, 300, 1000, 3000, 10000]
+    subset_list = [100, 1000, 5000, 10000]
 
     # Directory to save subsets
     raw_data_dir = "data/raw"
@@ -173,7 +182,12 @@ def save_all_subsets():
     # Save subsets
     for num_businesses in subset_list:
         print(f"Creating subset with {num_businesses} businesses")
+
+        start_time = time.time()
         save_core_subset_of_ratings(raw_ratings_path, raw_metadata_path, data_dir, num_businesses)
+        end_time = time.time()
+
+        print(f"Created subset with {num_businesses} businesses in {end_time - start_time} seconds.")
 
 if __name__ == "__main__":
     fetch_raw_google_reviews_data()

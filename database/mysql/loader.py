@@ -116,7 +116,7 @@ def load_dataset(db: MySQLConnection):
 
 
 if __name__ == "__main__":
-    subsets = [100, 1000]
+    subsets = [100, 1000, 5000, 10000]
 
     for num_businesses in subsets:
         try:

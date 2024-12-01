@@ -25,3 +25,6 @@ data/samples/
 
 # Ignore Python editable installation files
 db_project.egg-info/
+
+# Ignore temp_temp directory, just keeping to store code while reading
+temp-temp/
