@@ -42,7 +42,7 @@ class MySQLRecommendationEngine:
         """
         Fetch recommendations based on collaborative filtering with category filtering.
         """
-        cur = self.conn.cursor()
+        cur = self.conn.cursor(dictionary=True)
 
         query = """
         -- Step 1: Get all businesses rated by the target user
@@ -89,7 +89,7 @@ class MySQLRecommendationEngine:
         """
         Fetch fallback recommendations based on objective criteria within the specified category.
         """
-        cur = self.conn.cursor()
+        cur = self.conn.cursor(dictionary=True)
 
         query = """
         WITH category_businesses AS (
@@ -124,7 +124,7 @@ class MySQLRecommendationEngine:
         """
         Fetch recommendations based on SIMILAR_TO relationships.
         """
-        cur = self.conn.cursor()
+        cur = self.conn.cursor(dictionary=True)
 
         query = """
         WITH similar_users AS (
@@ -163,7 +163,7 @@ class MySQLRecommendationEngine:
         LIMIT %s;
         """
 
-        cur.execute(query, (user_id, user_id, category, limit))
+        cur.execute(query, (user_id, user_id, category, user_id, limit))
         results = cur.fetchall()
         return results
     
@@ -171,7 +171,7 @@ class MySQLRecommendationEngine:
         """
         Fetch recommendations based on user-user and business-business SIMILAR_TO relationships.
         """
-        cur = self.conn.cursor()
+        cur = self.conn.cursor(dictionary=True)
 
         query = """
         WITH similar_users AS (
@@ -229,7 +229,7 @@ class MySQLRecommendationEngine:
         """
         Get recommendations using Bayesian Averaging for confidence-based scoring.
         """
-        cur = self.conn.cursor()
+        cur = self.conn.cursor(dictionary=True)
 
         query = """
         WITH similar_users AS (
@@ -288,12 +288,16 @@ class MySQLRecommendationEngine:
         results = cur.fetchall()
         return results
 
+def print_recommendations(recommendations):
+    for idx, rec in enumerate(recommendations):
+        print(f"{idx + 1}. {rec['business_name']} ({rec['business_id']})")
 
 if __name__ == "__main__":
 
     tests = [
         {
             'num_businesses': 10000,
+            # 'user_id': "108416619844777498346",  # Difficult user_id to get user-business-based recs on, takes a lot of time
             'user_id': "108987883798305430608",
             'category': "Restaurant"
         }
@@ -306,22 +310,52 @@ if __name__ == "__main__":
 
         conn = get_db_connection(num_businesses)
         engine = MySQLRecommendationEngine(conn)
+        limit=5
 
         try:
-            recommendations = engine.get_recommendations(user_id, category=category, limit=5)
-            print("Recommendations:", recommendations)
+            start_time = time.time()
+            recommendations = engine.get_recommendations(user_id, category=category, limit=limit)
+            end_time = time.time()
+            print("Recommendations:")
+            print_recommendations(recommendations)
+            print(f"Time taken: {end_time - start_time} s.")
 
-            recommendations_fallback = engine._fetch_fallback_recommendations(category, limit=5)
-            print("Fallback recommendations:", recommendations_fallback)
+            print("--------------------")
 
-            recommendations_user = engine._fetch_recommendations_user(user_id, category, limit=5)
-            print("User-based recommendations:", recommendations_user)
+            start_time = time.time()
+            recommendations_fallback = engine._fetch_fallback_recommendations(category, limit=limit)
+            end_time = time.time()
+            print("Fallback recommendations:")
+            print_recommendations(recommendations_fallback)
+            print(f"Time taken: {end_time - start_time} s.")
 
-            recommendations_user_business = engine._fetch_recommendations_user_business(user_id, category, limit=5)
-            print("User-business-based recommendations:", recommendations_user_business)
+            print("--------------------")
 
-            recommendations_bayesian = engine.get_recommendations_bayesian(user_id, category, limit=5)
-            print("Bayesian recommendations:", recommendations_bayesian)
+            start_time = time.time()
+            recommendations_user = engine._fetch_recommendations_user(user_id, category, limit=limit)
+            end_time = time.time()
+            print("User-based recommendations:")
+            print_recommendations(recommendations_user)
+            print(f"Time taken: {end_time - start_time} s.")
+
+            print("--------------------")
+
+            start_time = time.time()
+            recommendations_user_business = engine._fetch_recommendations_user_business(user_id, category, limit=limit)
+            end_time = time.time()
+            print("User-business-based recommendations:")
+            print_recommendations(recommendations_user_business)
+            print(f"Time taken: {end_time - start_time} s.")
+
+            print("--------------------")
+
+            start_time = time.time()
+            recommendations_bayesian = engine.get_recommendations_bayesian(user_id, category, limit=limit)
+            end_time = time.time()
+            print("Bayesian recommendations:")
+            print_recommendations(recommendations_bayesian)
+            print(f"Time taken: {end_time - start_time} s.")
+
         finally:
             conn.close()
     
