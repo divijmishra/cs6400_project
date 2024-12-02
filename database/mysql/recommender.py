@@ -63,29 +63,31 @@ class MySQLRecommendationEngine:
         
         -- Step 3: Find businesses rated by these similar users
         business_rated_by_similar_users AS (
-            SELECT DISTINCT r.business_id AS other_business_id
+            SELECT r.business_id AS other_business_id
             FROM ratings r
             JOIN similar_users su
             ON r.user_id = su.user_id
         ),
 
-        -- Step 4: Filter businesses by category and exclude those already rated by the target user
-        category_filtered_recommendations AS (
-            SELECT brsu.other_business_id, COUNT(*) AS score
-            FROM business_rated_by_similar_users brsu
-            JOIN business_categories bc
-            ON brsu.other_business_id = bc.business_id
+        -- Step 4: Find businesses belonging to the specified category
+        category_businesses AS (
+            SELECT brsu.other_business_id AS other_business_id
+            FROM business_categories bc
+            JOIN business_rated_by_similar_users brsu
+            ON bc.business_id = brsu.other_business_id
             WHERE bc.category_name = %s
-            AND brsu.other_business_id NOT IN (SELECT business_id FROM user_rated_businesses)
-            GROUP BY brsu.other_business_id
+            AND brsu.other_business_id NOT IN (
+                SELECT business_id FROM user_rated_businesses
+            )
         )
 
-        -- Step 5: Return the top recommendations sorted by score
-        SELECT b.business_name, b.business_id, cfr.score
-        FROM category_filtered_recommendations cfr
+        -- Step 5: Return the top recommendations sorted by score (= number of ratings in this table)
+        SELECT b.business_name, b.business_id, COUNT(*) AS score
+        FROM category_businesses AS cb
         JOIN businesses b
-        ON cfr.other_business_id = b.business_id
-        ORDER BY cfr.score DESC
+        ON cb.other_business_id = b.business_id
+        GROUP BY b.business_id
+        ORDER BY score DESC
         LIMIT %s;
         """
 
@@ -109,7 +111,7 @@ class MySQLRecommendationEngine:
         )
 
         -- Step 2: Return businesses sorted by average rating and total ratings
-        SELECT cb.business_name, cb.business_id, cb.avg_rating, cb.num_reviews
+        SELECT cb.business_name, cb.business_id, cb.num_reviews, cb.avg_rating
         FROM category_businesses cb
         ORDER BY cb.avg_rating DESC, cb.num_reviews DESC
         LIMIT %s;
@@ -156,7 +158,11 @@ class MySQLRecommendationEngine:
             SELECT r.business_id, r.rating, su.similarity_score
             FROM ratings r
             JOIN similar_users su ON r.user_id = su.similar_user_id
-            WHERE r.business_id IN category_filtered_businesses
+            WHERE r.business_id IN (
+                SELECT business_id FROM category_filtered_businesses
+            ) AND r.business_id NOT IN (
+                SELECT business_id FROM user_rated_businesses
+            )
         )
 
         -- Step 5: Calculate weighted score (normalized), total ratings, and average rating for each business
@@ -166,7 +172,6 @@ class MySQLRecommendationEngine:
             AVG(sur.rating) AS avg_rating
         FROM similar_user_ratings sur
         JOIN businesses b ON sur.business_id = b.business_id
-        WHERE b.business_id NOT IN user_rated_businesses
         GROUP BY b.business_id, b.business_name
         ORDER BY weighted_score DESC, avg_rating DESC
         LIMIT %s;
@@ -330,15 +335,16 @@ class MySQLRecommendationEngine:
 
 def print_recommendations(recommendations):
     for idx, rec in enumerate(recommendations):
-        print(f"{idx + 1}. {rec['business_name']} ({rec['business_id']})")
+        # print(f"{idx + 1}. {rec['business_name']} ({rec['business_id']})")
+        print(rec)
 
 if __name__ == "__main__":
 
     tests = [
         {
             'num_businesses': 10000,
-            # 'user_id': "108416619844777498346",  # Difficult user_id to get user-business-based recs on, takes a lot of time
-            'user_id': "108987883798305430608",
+            'user_id': "108416619844777498346",  # Difficult user_id to get user-business-based recs on, takes a lot of time
+            # 'user_id': "108987883798305430608",
             'category': "Restaurant"
         }
     ]
