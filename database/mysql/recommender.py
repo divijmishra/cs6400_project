@@ -126,8 +126,15 @@ class MySQLRecommendationEngine:
         cur = self.conn.cursor(dictionary=True)
 
         query = """
-        WITH similar_users AS (
-            -- Get similar users and their similarity scores
+        -- Step 1: Get businesses rated by target user (for later filtering)
+        WITH user_rated_businesses AS (
+            SELECT DISTINCT r.business_id
+            FROM ratings r
+            WHERE r.user_id = %s
+        ),
+
+        -- Step 2: Get similar users and their similarity scores
+        similar_users AS (
             SELECT s.user_id_2 AS similar_user_id, s.similarity_score
             FROM user_similarity s
             WHERE s.user_id_1 = %s
@@ -136,27 +143,30 @@ class MySQLRecommendationEngine:
             FROM user_similarity s
             WHERE s.user_id_2 = %s
         ),
+
+        -- Step 3: Pre-filter businesses by category
+        category_filtered_businesses AS (
+            SELECT bc.business_id
+            FROM business_categories bc
+            WHERE bc.category_name = %s
+        ),
+
+        -- Step 4: Get businesses rated by similar users in the filtered category
         similar_user_ratings AS (
-            -- Get businesses rated by the similar users in the given category
             SELECT r.business_id, r.rating, su.similarity_score
             FROM ratings r
             JOIN similar_users su ON r.user_id = su.similar_user_id
-            JOIN business_categories bc ON r.business_id = bc.business_id
-            WHERE bc.category_name = %s
+            WHERE r.business_id IN category_filtered_businesses
         )
-        -- Calculate weighted score (normalized), total ratings, and average rating for each business
+
+        -- Step 5: Calculate weighted score (normalized), total ratings, and average rating for each business
         SELECT b.business_name, b.business_id, 
             SUM(sur.rating * sur.similarity_score) / SUM(sur.similarity_score) AS weighted_score,
             COUNT(sur.rating) AS total_ratings,
             AVG(sur.rating) AS avg_rating
         FROM similar_user_ratings sur
         JOIN businesses b ON sur.business_id = b.business_id
-        WHERE NOT EXISTS (
-            SELECT 1
-            FROM ratings r
-            WHERE r.user_id = %s
-            AND r.business_id = sur.business_id
-        )
+        WHERE b.business_id NOT IN user_rated_businesses
         GROUP BY b.business_id, b.business_name
         ORDER BY weighted_score DESC, avg_rating DESC
         LIMIT %s;
