@@ -52,27 +52,35 @@ class MySQLRecommendationEngine:
             WHERE r.user_id = %s
         ),
 
-        -- Step 2: Find businesses rated by other users who rated the same businesses
-        business_rated_by_others AS (
-            SELECT r.business_id AS other_business_id, r.user_id
+        -- Step 2: Find all users who rated the same businesses as the target user
+        similar_users AS (
+            SELECT DISTINCT r.user_id
             FROM ratings r
             JOIN user_rated_businesses ur
             ON r.business_id = ur.business_id
-            AND r.user_id != %s
+            WHERE r.user_id != %s
+        ),
+        
+        -- Step 3: Find businesses rated by these similar users
+        business_rated_by_similar_users AS (
+            SELECT DISTINCT r.business_id AS other_business_id
+            FROM ratings r
+            JOIN similar_users su
+            ON r.user_id = su.user_id
         ),
 
-        -- Step 3: Filter businesses by category and exclude those already rated by the target user
+        -- Step 4: Filter businesses by category and exclude those already rated by the target user
         category_filtered_recommendations AS (
-            SELECT br.other_business_id, COUNT(*) AS score
-            FROM business_rated_by_others br
+            SELECT brsu.other_business_id, COUNT(*) AS score
+            FROM business_rated_by_similar_users brsu
             JOIN business_categories bc
-            ON br.other_business_id = bc.business_id
+            ON brsu.other_business_id = bc.business_id
             WHERE bc.category_name = %s
-            AND br.other_business_id NOT IN (SELECT business_id FROM user_rated_businesses)
-            GROUP BY br.other_business_id
+            AND brsu.other_business_id NOT IN (SELECT business_id FROM user_rated_businesses)
+            GROUP BY brsu.other_business_id
         )
 
-        -- Step 4: Return the top recommendations sorted by score
+        -- Step 5: Return the top recommendations sorted by score
         SELECT b.business_name, b.business_id, cfr.score
         FROM category_filtered_recommendations cfr
         JOIN businesses b
@@ -92,27 +100,18 @@ class MySQLRecommendationEngine:
         cur = self.conn.cursor(dictionary=True)
 
         query = """
+        -- Step 1: Get businesses in the given category
         WITH category_businesses AS (
-            -- Get businesses in the given category
-            SELECT b.business_id, b.business_name
+            SELECT DISTINCT b.business_id, b.business_name, b.avg_rating, b.num_reviews
             FROM businesses b
             JOIN business_categories bc ON b.business_id = bc.business_id
             WHERE bc.category_name = %s
-        ),
-        business_ratings AS (
-            -- Get ratings for the businesses from the previous CTE
-            SELECT r.business_id, r.rating
-            FROM ratings r
-            JOIN category_businesses cb ON r.business_id = cb.business_id
         )
-        -- Now aggregate ratings and calculate total ratings and average rating for each business
-        SELECT cb.business_name, cb.business_id, 
-            COUNT(br.rating) AS total_ratings, 
-            AVG(br.rating) AS avg_rating
+
+        -- Step 2: Return businesses sorted by average rating and total ratings
+        SELECT cb.business_name, cb.business_id, cb.avg_rating, cb.num_reviews
         FROM category_businesses cb
-        LEFT JOIN business_ratings br ON cb.business_id = br.business_id
-        GROUP BY cb.business_id, cb.business_name
-        ORDER BY avg_rating DESC, total_ratings DESC
+        ORDER BY cb.avg_rating DESC, cb.num_reviews DESC
         LIMIT %s;
         """
 
