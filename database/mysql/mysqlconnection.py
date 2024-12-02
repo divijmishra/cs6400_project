@@ -1,4 +1,5 @@
 import mysql.connector
+from mysql.connector.pooling import MySQLConnectionPool
 
 class MySQLConnection:
     """
@@ -8,12 +9,12 @@ class MySQLConnection:
         """
         num_businesses = 100, 1000, etc.
         """
+        self.num_businesses = num_businesses
         try:
-            self.num_businesses = num_businesses
             self.connection = mysql.connector.connect(
-                host="localhost",
-                user="cs6400",
-                password="qwertyuiop",
+                host=host,
+                user=user,
+                password=password,
                 database=f"cs6400_{num_businesses}"
             )
             self.cursor = self.connection.cursor()
@@ -21,7 +22,4 @@ class MySQLConnection:
         except mysql.connector.Error as e:
             print(f"Error: {e}")
 
-    def close(self):
-        self.cursor.close()
-        self.connection.close()
     
