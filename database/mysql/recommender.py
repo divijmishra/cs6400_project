@@ -183,8 +183,15 @@ class MySQLRecommendationEngine:
         cur = self.conn.cursor(dictionary=True)
 
         query = """
-        WITH similar_users AS (
-            -- Get similar users and their similarity scores
+        -- Step 1: Get businesses rated by target user (for later filtering)
+        WITH user_rated_businesses AS (
+            SELECT DISTINCT r.business_id
+            FROM ratings r
+            WHERE r.user_id = %s
+        ),
+
+        -- Step 2: Get similar users and their similarity scores
+        similar_users AS (
             SELECT s.user_id_2 AS similar_user_id, s.similarity_score
             FROM user_similarity s
             WHERE s.user_id_1 = %s
@@ -193,40 +200,64 @@ class MySQLRecommendationEngine:
             FROM user_similarity s
             WHERE s.user_id_2 = %s
         ),
+
+        -- Step 3: Pre-filter businesses by category
+        category_filtered_businesses AS (
+            SELECT bc.business_id
+            FROM business_categories bc
+            WHERE bc.category_name = %s
+        ),
+        
+        -- Step 4: Get businesses rated by similar users in the given category
         user_based_ratings AS (
-            -- Get businesses rated by similar users in the given category
             SELECT r.business_id, r.rating, su.similarity_score
             FROM ratings r
             JOIN similar_users su ON r.user_id = su.similar_user_id
-            JOIN business_categories bc ON r.business_id = bc.business_id
-            WHERE bc.category_name = %s
+            WHERE r.business_id IN category_filtered_businesses
         ),
+
+        -- Step 5: Get businesses similar to those already rated by the user,
+        --         filtering out businesses already rated by the target user
         business_based_ratings AS (
-            -- Get businesses similar to those already rated by the user
-            SELECT r.business_id, r.rating, su.similarity_score
-            FROM ratings r
-            JOIN business_categories bc ON r.business_id = bc.business_id
-            JOIN user_similarity su ON r.user_id = su.user_id_2
-            WHERE su.user_id_1 = %s
-            AND NOT EXISTS (
-                SELECT 1
-                FROM ratings r_user
-                WHERE r_user.user_id = %s
-                AND r_user.business_id = r.business_id
-            )
+            SELECT bs.business_id_2 AS business_id, bs.similarity_score
+            FROM business_similarity bs
+            WHERE bs.business_id_1 IN user_rated_businesses
+            AND bs.business_id_2 NOT IN user_rated_businesses
+            UNION
+            SELECT bs.business_id_1 AS business_id, bs.similarity_score
+            FROM business_similarity bs
+            WHERE bs.business_id_2 IN user_rated_businesses
+            AND bs.business_id_1 NOT IN user_rated_businesses
+        ),
+
+        -- Step 6: Combine user-based ratings and business-based ratings to calculate scores
+        WITH combined_scores AS (
+            SELECT 
+                COALESCE(ubr.business_id, bbr.business_id) AS business_id,
+                -- Calculate normalized user-based score
+                COALESCE(SUM(ubr.rating * ubr.similarity_score) / NULLIF(SUM(ubr.similarity_score), 0), 0) AS user_based_score,
+                -- Calculate normalized business-based score
+                COALESCE(SUM(bbr.similarity_score) / NULLIF(COUNT(bbr.business_id), 0), 0) AS business_based_score
+            FROM user_based_ratings ubr
+            FULL OUTER JOIN business_based_ratings bbr 
+            ON ubr.business_id = bbr.business_id
+            GROUP BY COALESCE(ubr.business_id, bbr.business_id)
         )
-        -- Combine scores from user-user and business-business similarity
-        SELECT b.business_name, b.business_id, 
-            -- Normalize weighted score by dividing the sum of ratings by the sum of similarity scores
-            COALESCE(SUM(ubr.rating * ubr.similarity_score) / NULLIF(SUM(ubr.similarity_score), 0), 0) AS user_based_score,
-            COALESCE(SUM(bbr.rating * bbr.similarity_score) / NULLIF(SUM(bbr.similarity_score), 0), 0) AS business_based_score,
-            COALESCE(COUNT(ubr.rating), 0) AS total_ratings,
-            COALESCE(AVG(ubr.rating), 0) AS avg_rating
-        FROM businesses b
-        LEFT JOIN user_based_ratings ubr ON b.business_id = ubr.business_id
-        LEFT JOIN business_based_ratings bbr ON b.business_id = bbr.business_id
-        GROUP BY b.business_id, b.business_name
-        ORDER BY (user_based_score + business_based_score) DESC, avg_rating DESC
+
+        -- Step 7: Join scores with businesses and fetch additional details
+        SELECT 
+            b.business_name, 
+            b.business_id, 
+            cs.user_based_score, 
+            cs.business_based_score, 
+            -- Total ratings and average rating are directly available in the businesses table
+            b.num_reviews AS total_ratings,
+            b.avg_rating,
+            -- Combine user-based and business-based scores for final ranking
+            (cs.user_based_score + cs.business_based_score) AS total_score
+        FROM combined_scores cs
+        JOIN businesses b ON cs.business_id = b.business_id
+        ORDER BY total_score DESC, b.avg_rating DESC
         LIMIT %s;
         """
 
