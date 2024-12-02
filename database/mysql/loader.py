@@ -3,7 +3,7 @@ from datetime import datetime
 import pandas as pd
 import mysql.connector
 import time
-from database.mysql.mysqlconnection import MySQLConnection
+from mysqlconnection import MySQLConnection
 
 # Creates tables with hard-coded schema
 def create_tables(db: MySQLConnection):
@@ -20,6 +20,7 @@ def create_tables(db: MySQLConnection):
         if query.strip():
             cursor.execute(query)
 
+db_map = {100:"100", 1000:"1k", 5000:"5k", 10000:"10k"}
 
 # Loads a provided dataset
 def load_dataset(db: MySQLConnection):
@@ -30,8 +31,11 @@ def load_dataset(db: MySQLConnection):
     connection = db.connection
     cursor = db.cursor
 
-    ratings_file = f"data/samples/ratings_{db.num_businesses}.csv"
-    metadata_file = f"data/samples/metadata_{db.num_businesses}.csv"
+    # ratings_file = f"data/samples/ratings_{db.num_businesses}.csv"
+    # metadata_file = f"data/samples/metadata_{db.num_businesses}.csv"
+
+    ratings_file = f"data/filtered_ratings_{db_map[db.num_businesses]}.csv"
+    metadata_file = f"data/matched_businesses_{db_map[db.num_businesses]}.csv"
 
     # Recreate tables
     create_tables(db)

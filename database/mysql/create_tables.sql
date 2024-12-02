@@ -31,7 +31,8 @@ CREATE TABLE ratings (
     rating TINYINT,
     timestamp DATETIME,
     FOREIGN KEY (business_id) REFERENCES businesses(business_id),
-    FOREIGN KEY (user_id) REFERENCES users (user_id)
+    FOREIGN KEY (user_id) REFERENCES users (user_id),
+    CONSTRAINT unique_business_user_pair UNIQUE (business_id, user_id)
 );
 
 -- Table to store business-categories (no primary key!)
@@ -58,7 +59,7 @@ CREATE TABLE user_similarity (
 CREATE TABLE business_similarity (
     business_id_1 VARCHAR(50) NOT NULL, -- First business ID, must not be NULL
     business_id_2 VARCHAR(50) NOT NULL, -- Second business ID, must not be NULL
-    similarity_score DECIMAL(5, 4) NOT NULL DEFAULT 0.0000, -- Similarity score with default value
+    similarity_score DECIMAL(17, 16) NOT NULL DEFAULT 0.0000000000000000, -- Similarity score with default value
     common_categories INT NOT NULL DEFAULT 0, -- Number of common categories, default to 0
     last_updated BIGINT NOT NULL, -- Timestamp for the last update
     PRIMARY KEY (business_id_1, business_id_2), -- Composite primary key
