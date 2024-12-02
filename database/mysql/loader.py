@@ -109,7 +109,7 @@ def load_dataset(db: MySQLConnection):
         query = (
             f"INSERT INTO ratings (business_id, user_id, rating, timestamp)"
             f"VALUES (%s, %s, %s, %s)"
-            f"ON DUPLICATE KEY UPDATE rating = VLUAES(rating), timestamp = VALUES(timestamp)"
+            f"ON DUPLICATE KEY UPDATE rating = VALUES(rating), timestamp = VALUES(timestamp)"
         )
         cursor.executemany(query, rating_data)
 
