@@ -1,7 +1,7 @@
 import logging
 import time
 
-from database.mysql.mysqlconnection import MySQLConnection
+from mysqlconnection import MySQLConnection
 
 # Database details
 HOST = "localhost"
@@ -46,13 +46,11 @@ class MySQLRecommendationEngine:
 
         query = """
         -- Step 1: Get all businesses rated by the target user
-        WITH user_rated_businesses AS (
+        WITH user_Rated_businesses AS(
             SELECT DISTINCT r.business_id
             FROM ratings r
             WHERE r.user_id = %s
         ),
-
-        -- Step 2: Find all users who rated the same businesses as the target user
         similar_users AS (
             SELECT DISTINCT r.user_id
             FROM ratings r
@@ -60,33 +58,33 @@ class MySQLRecommendationEngine:
             ON r.business_id = ur.business_id
             WHERE r.user_id != %s
         ),
-        
-        -- Step 3: Find businesses rated by these similar users
         business_rated_by_similar_users AS (
-            SELECT r.business_id AS other_business_id
+            SELECT DISTINCT r.business_id
             FROM ratings r
             JOIN similar_users su
             ON r.user_id = su.user_id
         ),
-
-        -- Step 4: Find businesses belonging to the specified category
         category_businesses AS (
-            SELECT brsu.other_business_id AS other_business_id
+            SELECT DISTINCT brsu.business_id
             FROM business_categories bc
             JOIN business_rated_by_similar_users brsu
-            ON bc.business_id = brsu.other_business_id
+            ON bc.business_id = brsu.business_id
             WHERE bc.category_name = %s
-            AND brsu.other_business_id NOT IN (
+            AND brsu.business_id NOT IN (
                 SELECT business_id FROM user_rated_businesses
             )
         )
-
-        -- Step 5: Return the top recommendations sorted by score (= number of ratings in this table)
-        SELECT b.business_name, b.business_id, COUNT(*) AS score
-        FROM category_businesses AS cb
+        SELECT b.business_name, r.business_id, COUNT(r.business_id) AS score
+        FROM ratings r
         JOIN businesses b
-        ON cb.other_business_id = b.business_id
-        GROUP BY b.business_id
+        ON r.business_id = b.business_id
+        WHERE r.business_id IN (
+            SELECT business_id FROM category_businesses
+        )
+        AND r.user_id IN (
+            SELECT user_id FROM similar_users
+        )
+        GROUP BY r.business_id
         ORDER BY score DESC
         LIMIT %s;
         """
@@ -113,7 +111,7 @@ class MySQLRecommendationEngine:
         -- Step 2: Return businesses sorted by average rating and total ratings
         SELECT cb.business_name, cb.business_id, cb.num_reviews, cb.avg_rating
         FROM category_businesses cb
-        ORDER BY cb.avg_rating DESC, cb.num_reviews DESC
+        ORDER BY cb.avg_rating DESC, cb.num_reviews DESC, cb.business_name ASC
         LIMIT %s;
         """
 
@@ -473,6 +471,7 @@ if __name__ == "__main__":
     tests = [
         {
             'num_businesses': 10000,
+            # 'user_id' : "107065929445511534118",
             'user_id': "108416619844777498346",  # Difficult user_id to get user-business-based recs on, takes a lot of time
             # 'user_id': "108987883798305430608",
             'category': "Restaurant"
@@ -489,7 +488,7 @@ if __name__ == "__main__":
         limit=5
 
         try:
-            '''
+            
             start_time = time.time()
             recommendations = engine.get_recommendations(user_id, category=category, limit=limit)
             end_time = time.time()
@@ -508,7 +507,7 @@ if __name__ == "__main__":
             print(f"Time taken: {end_time - start_time} s.")
 
             print("--------------------")
-            '''
+            
             
             start_time = time.time()
             recommendations_user = engine._fetch_recommendations_user(user_id, category, limit=limit)
