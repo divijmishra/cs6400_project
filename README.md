@@ -32,6 +32,12 @@ To set up the environment for this project, follow these steps:
     - Create a new virtual environment in a folder named db_venv.
     - Install all required dependencies from the requirements.txt file.
 
+2. Run
+    ```bash
+    pip install -e .
+    ```
+    This will install the repo as a module, allowing easy imports of functions we define.
+
 
 ### Option 2: Manual Setup (Without the Script)
 1. Create a new virtual environment:
@@ -49,12 +55,20 @@ To set up the environment for this project, follow these steps:
      source db_venv/bin/activate
      ```
 
-5. Install the dependencies:
+3. Install the dependencies:
    ```bash
    pip install -r requirements.txt
    ```
 
+4. Run
+    ```bash
+    pip install -e .
+    ```
+    This will install the repo as a module, allowing easy imports of functions we define.
+
 You should now have the same environment set up with all required dependencies.
+
+
 
 ## Working on the project
 ### Activating the Virtual Environment
