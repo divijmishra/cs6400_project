@@ -2,16 +2,8 @@
 Downloads data, extracts files, and creates subsets for experimentation.
 Data source: https://datarepo.eng.ucsd.edu/mcauley_group/gdrive/googlelocal/
 
-We're working with the Georgia dataset, which contains 24M reviews and 166k businesses. This code creates 4 subsets:
-> extra small (100 businesses => ~23k ratings)
-> small (1k businesses => ~170k ratings)
-> medium (10k businesses => ~1.4M ratings)
-> large (100k businesses => ~14M ratings)
-(Note the exact subsets and number of ratings are seed-dependent)
-
+We're working with the Georgia dataset, which contains 24M reviews and 166k businesses.  This code creates smaller subsets.
 Data downloaded to data/raw/, subsets saved to data/samples/.
-
-(Took ~20 min to run on my local system. Filtering businesses for 100k takes ~half of that time.)
 """
 
 import os
@@ -208,7 +200,8 @@ def fetch_raw_google_reviews_data():
 
 # Function to create and save subsets of data for experimentation
 def save_all_subsets():
-    subset_list = [100, 1000, 5000, 10000]
+    # subset_list = [100, 1000, 5000, 10000]
+    subset_list = [1000]
 
     # Directory to save subsets
     raw_data_dir = "data/raw"
