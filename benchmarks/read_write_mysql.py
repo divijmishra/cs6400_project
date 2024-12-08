@@ -14,7 +14,7 @@ DB_CONFIG = {
     'host': 'localhost',
     'user': 'cs6400',
     'password': 'qwertyuiop',
-    'database': 'CS6400_1000'
+    'database': 'cs6400_1000'
 }
 
 EXPERIMENTS = [
