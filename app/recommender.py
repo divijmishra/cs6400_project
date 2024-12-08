@@ -1,7 +1,7 @@
 import logging
 import time
 
-from mysqlconnection import MySQLConnection
+from database.mysql.mysqlconnection import MySQLConnection
 
 # Database details
 HOST = "localhost"

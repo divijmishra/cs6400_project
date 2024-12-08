@@ -5,7 +5,7 @@ import argparse
 import ast
 import logging
 import time
-from similarityCalculatorNoCache import SimilarityCalculatorNoCache
+from database.neo4j.similarity_calculator_no_cache import SimilarityCalculatorNoCache
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)

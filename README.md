@@ -122,13 +122,16 @@ pip freeze > requirements.txt
 
 Follow the instructions in ```data/README.md``` to fetch data, preprocess it, and create smaller subsets.
 
-#### MySQL - loading data, generating similarities, running recommendations
+#### MySQL - loading data, generating similarities
+Follow the instructions in ```database/mysql/README.md``` to load data and generate similarity tables for MySQL.
 
-Follow the instructions in ```database/mysql/README.md``` to load data, generate similarity tables for MySQL, run recommendations, and measure the performance of these tasks.
+#### Neo4j - loading data, generating similarities
 
-#### Neo4j - loading data, generating similarities, running recommendations
+Follow the instructions in ```database/neo4j/README.md``` to load data and generate similarity tables for Neo4j.
 
-Follow the instructions in ```database/neo4j/README.md``` to load data, generate similarity tables for Neo4j, run recommendations, and measure the performance of these tasks.
+#### Running recommendations
+
+Follow the instructions in ```app/README.md``` to run recommendations using MySQL/Neo4j.
 
 #### Write-Read benchmarks
 
