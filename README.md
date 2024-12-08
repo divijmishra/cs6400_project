@@ -1,5 +1,26 @@
 # CS-6400-Project
 
+## **Project Structure**
+
+```
+/CS-6400-Project
+├── /app                    # Core recommendation engines for Neo4j and MySQL
+│   ├── collaborative_recommendation_engine.py  # Neo4j-based recommendation engine
+│   └── recommender.py                          # MySQL-based recommendation engine
+├── /data                   # Data manipulation files and generated CSVs used for data loading
+├── /database               # Database connection and initialization scripts for MySQL and Neo4j
+│   └── /mysql              # MySQL loading and similarity calculation
+│   │   └── loader.py                           # Load data in MySQL
+│   │   └── similarity.py                       # Calculate similarities in MySQL
+│   └── /neo4j              # Neo4j loading and similarity calculation
+│       └── load.py                             # Load data in Neo4j
+│       └── similarity_calculator_no_cache.py   # Calculate similarities in Neo4j
+├── /notebooks              # Jupyter notebooks for exploratory data analysis and testing
+├── README.md               # Main project README file
+├── requirements.txt        # Python dependencies
+└── setup_env.py            # Script to setup environment
+```
+
 ## Clone the repository
 If you haven't already cloned the repository, you can clone it directly from the original project or from your fork.
 - Clone the original repository
