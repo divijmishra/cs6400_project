@@ -276,7 +276,8 @@ def run_business_similarity_calculation(min_similarity, batch_size, num_business
 ###############################################################
 
 if __name__ == "__main__":
-    subsets = [100, 1000, 5000, 10000]
+    # subsets = [100, 1000, 5000, 10000]
+    subsets = [1000]
 
     # Calculate business similarities
     for num_businesses in subsets:

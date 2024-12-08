@@ -34,8 +34,8 @@ def load_dataset(db: MySQLConnection):
     # ratings_file = f"data/samples/ratings_{db.num_businesses}.csv"
     # metadata_file = f"data/samples/metadata_{db.num_businesses}.csv"
 
-    ratings_file = f"data/filtered_ratings_{db_map[db.num_businesses]}.csv"
-    metadata_file = f"data/matched_businesses_{db_map[db.num_businesses]}.csv"
+    ratings_file = f"data/samples/filtered_ratings_{db_map[db.num_businesses]}.csv"
+    metadata_file = f"data/samples/matched_businesses_{db_map[db.num_businesses]}.csv"
 
     # Recreate tables
     create_tables(db)
@@ -121,7 +121,8 @@ def load_dataset(db: MySQLConnection):
 
 
 if __name__ == "__main__":
-    subsets = [100, 1000, 5000, 10000]
+    # subsets = [100, 1000, 5000, 10000]
+    subsets = [1000]
 
     for num_businesses in subsets:
         try:

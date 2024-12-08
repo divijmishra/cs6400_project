@@ -14,6 +14,8 @@ import shutil
 import requests
 import pandas as pd
 
+db_map = {100:"100", 1000:"1k", 5000:"5k", 10000:"10k"}
+
 # Randomly choose a subset of businesses from ratings and save their ratings
 def save_subset_of_ratings(input_file, output_dir, num_businesses=100000):
     """
@@ -55,7 +57,7 @@ def save_subset_of_ratings(input_file, output_dir, num_businesses=100000):
     # Modify file name
     num_ratings = len(filtered_df)
     num_users = len(filtered_df['user'].drop_duplicates())
-    output_file = f"{output_dir}/ratings_{num_businesses}.csv" 
+    output_file = f"{output_dir}/filtered_ratings_{db_map[num_businesses]}.csv" 
 
     filtered_df.to_csv(output_file, index=False)
     print(f"Filtered data saved to '{output_file}'.")
@@ -125,7 +127,7 @@ def save_filtered_subset_of_metadata(csv_file, json_file, output_dir):
     # Modify file name
     num_ratings = len(ratings_df)
     num_businesses = len(unique_businesses) 
-    output_file = f"{output_dir}/metadata_{num_businesses}.csv"
+    output_file = f"{output_dir}/matched_businesses_{db_map[num_businesses]}.csv"
 
     if filtered_businesses_unique:
         df = pd.json_normalize(filtered_businesses_unique)  

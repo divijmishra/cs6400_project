@@ -19,8 +19,8 @@ DB_CONFIG = {
 
 EXPERIMENTS = [
     # {'writes': 9000, 'recs': 1000}
-    {'writes': 5000, 'recs': 5000}
-    # {'writes': 1000, 'recs': 9000}
+    # {'writes': 5000, 'recs': 5000}
+    {'writes': 1000, 'recs': 9000}
 ]
 
 def convert_ratings_file_to_list(ratings_file):

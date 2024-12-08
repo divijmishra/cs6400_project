@@ -5,13 +5,12 @@ import os
 random.seed(12345)
 
 # Load the data
-filtered_1k_ratings = pd.read_csv("data/samples/ratings_1000.csv")
-filtered_1k_businesses = pd.read_csv("data/samples/metadata_1000.csv")
-filtered_5k_ratings = pd.read_csv("data/samples/ratings_5000.csv")
-filtered_5k_businesses = pd.read_csv("data/samples/metadata_5000.csv")
-filtered_10k_ratings = pd.read_csv("data/samples/ratings_10000.csv")
-filtered_10k_businesses = pd.read_csv("data/samples/metadata_10000.csv")
-
+filtered_1k_ratings = pd.read_csv("data/samples/filtered_ratings_1k.csv")
+filtered_1k_businesses = pd.read_csv("data/samples/matched_businesses_1k.csv")
+# filtered_1k_ratings = pd.read_csv("data/samples/filtered_ratings_5k.csv")
+# filtered_1k_businesses = pd.read_csv("data/samples/matched_businesses_5k.csv")
+# filtered_1k_ratings = pd.read_csv("data/samples/filtered_ratings_10k.csv")
+# filtered_1k_businesses = pd.read_csv("data/samples/matched_businesses_10k.csv")
 # Datasets to process: (businesses, ratings)
 business_sets = [
     ('1k', filtered_1k_businesses, filtered_1k_ratings),
