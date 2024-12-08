@@ -43,7 +43,7 @@ If you haven't already cloned the repository, you can clone it directly from the
 
 To set up the environment for this project, follow these steps:
 
-### Option 1: Using setup_env.py Script (Recommended)
+#### Option 1: Using setup_env.py Script (Recommended)
 1. Run the setup script:
    ```bash
    python setup_env.py
@@ -60,7 +60,7 @@ To set up the environment for this project, follow these steps:
     This will install the repo as a module, allowing easy imports of functions we define.
 
 
-### Option 2: Manual Setup (Without the Script)
+#### Option 2: Manual Setup (Without the Script)
 1. Create a new virtual environment:
    ```bash
    python -m venv db_venv
@@ -92,7 +92,7 @@ You should now have the same environment set up with all required dependencies.
 
 
 ## Working on the project
-### Activating the Virtual Environment
+#### Activating the Virtual Environment
 Whenever you want to work on the project, make sure to activate the virtual environment:
 - On Windows:
     ```bash
@@ -103,15 +103,34 @@ Whenever you want to work on the project, make sure to activate the virtual envi
     source db_venv/bin/activate
     ```
 
-### Deactivating the Virtual Environment
+#### Deactivating the Virtual Environment
 When you're done working, deactivate the virtual environment by running:
 
 ```bash
 deactivate
 ```
 
-### Updating Dependencies
+#### Updating Dependencies
 If new dependencies are added to the project, you can update your requirements.txt file using:
 ```bash
 pip freeze > requirements.txt
 ```
+
+## Working with databases
+
+#### Retrieving data
+
+Follow the instructions in ```data/README.md``` to fetch data, preprocess it, and create smaller subsets.
+
+#### MySQL - loading data, generating similarities, running recommendations
+
+Follow the instructions in ```database/mysql/README.md``` to load data, generate similarity tables for MySQL, run recommendations, and measure the performance of these tasks.
+
+#### Neo4j - loading data, generating similarities, running recommendations
+
+Follow the instructions in ```database/neo4j/README.md``` to load data, generate similarity tables for Neo4j, run recommendations, and measure the performance of these tasks.
+
+#### Write-Read benchmarks
+
+Follow the instructions in ```benchmarks/README.md``` to perform write-read benchmarks on both databases.
+ 
