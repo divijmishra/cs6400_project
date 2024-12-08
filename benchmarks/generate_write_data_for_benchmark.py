@@ -15,8 +15,8 @@ filtered_10k_businesses = pd.read_csv("data/samples/metadata_10000.csv")
 # Datasets to process: (businesses, ratings)
 business_sets = [
     ('1k', filtered_1k_businesses, filtered_1k_ratings),
-    ('5k', filtered_5k_businesses, filtered_5k_ratings),
-    ('10k', filtered_10k_businesses, filtered_10k_ratings)
+    # ('5k', filtered_5k_businesses, filtered_5k_ratings),
+    # ('10k', filtered_10k_businesses, filtered_10k_ratings)
 ]
 
 def generate_ratings(businesses, ratings, size):

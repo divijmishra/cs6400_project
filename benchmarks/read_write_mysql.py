@@ -12,8 +12,8 @@ logger = logging.getLogger(__name__)
 
 DB_CONFIG = {
     'host': 'localhost',
-    'user': 'root',
-    'password': 'rootroot',
+    'user': 'cs6400',
+    'password': 'qwertyuiop',
     'database': 'CS6400_1000'
 }
 
