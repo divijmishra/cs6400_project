@@ -243,7 +243,7 @@ class SimilarityCalculatorNoCache:
                 executor.submit(process_business_batch, batch, i)
 
         end_time = time.time()
-        print(f"Business similarity calculation took {end_time - start_time:.2f} seconds")
+        logger.info(f"Business similarity calculation took {end_time - start_time:.2f} seconds")
         logger.info("Business similarity calculation completed")
     
     def update_user_similarity(self, affected_users, min_common_items=3, min_similarity=0.3, batch_size=500):

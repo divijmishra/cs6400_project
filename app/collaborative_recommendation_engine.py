@@ -1,5 +1,6 @@
 from database.neo4j.neo4j_connection import Neo4jConnection
 import logging
+import time
 
 logging.basicConfig(level=logging.INFO, 
                     format='%(asctime)s - %(levelname)s - %(message)s')
@@ -190,38 +191,49 @@ def main():
         # user_id = "108987883798305430608"  # Example user ID
         category = "Restaurant"  # Example category selected by the user
 
+        start_time = time.time()
         recommendations = engine.get_recommendations(user_id, category=category, limit=5)
+        end_time = time.time()
         print("Recommendations:")
         for rec in recommendations:
             print(rec)
         # print_recommendations(recommendations)
+        print(f"Time taken: {end_time - start_time} s.")
 
         print("--------------------")
-
+        start_time = time.time()
         recommendations_fallback = engine._fetch_fallback_recommendations(category, limit=5)
+        end_time = time.time()
         # print("Fallback recommendations:", recommendations_fallback)
         print("Fallback recommendations:")
         for rec in recommendations_fallback:
             print(rec)
         # print_recommendations(recommendations_fallback)
+        print(f"Time taken: {end_time - start_time} s.")
 
         print("--------------------")
 
+        start_time = time.time()
         recommendations_user = engine._fetch_recommendations_user(user_id, category, limit=5)
+        end_time = time.time()
         # print("User-based recommendations:", recommendations_user)
         print("User-based recommendations:")
         for rec in recommendations_user:
             print(rec)
         # print_recommendations(recommendations_user)
+        print(f"Time taken: {end_time - start_time} s.")
 
         print("--------------------")
 
+        start_time = time.time()
         recommendations_user_business = engine._fetch_recommendations_user_business(user_id, category, limit=5)
+        end_time = time.time()
         # print("User-business-based recommendations:", recommendations_user_business)
         print("User-business-based recommendations:")
         for rec in recommendations_user_business:
             print(rec)
         # print_recommendations(recommendations_user_business)
+        print(f"Time taken: {end_time - start_time} s.")
         print("--------------------")
     finally:
         conn.close()
